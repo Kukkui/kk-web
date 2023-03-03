@@ -16,6 +16,9 @@ export default function GA() {
   const [accessToken, setAccessToken] = useState('');
 
   const { TextArea } = Input;
+  const endpoint = `https://analyticsadmin.googleapis.com/v1beta`
+
+  const CLIENT_ID = '1035301278821-mnlpf5pa5qbgm3g3qo6a97k246at79b8.apps.googleusercontent.com'
 
   const onChange = (e, type) => {
     // console.log(e.target.value);
@@ -34,8 +37,11 @@ export default function GA() {
 
     await googleLoginAuth();
     await getAnalyticsAccount();
+    
     alert(audienceName);
     alert(audienceDescription);
+
+    getAccounts();
   }
 
   // const getAccounts = () => {
@@ -63,6 +69,31 @@ export default function GA() {
     //   });
 
   // }
+  const getAccounts = () => {
+
+    fetch(`${endpoint}/accounts`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+
+        console.log('Success: ', data)
+
+        console.log(data?.accounts);
+
+        if (data?.error?.code === 401) {
+          refreshToken()
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+
+  }
 
   const getAnalyticsAccount = () => {
     // GET https://www.googleapis.com/analytics/v3/management/accountSummaries
@@ -91,9 +122,6 @@ export default function GA() {
       });
   }
   // const endpoint = 'https://www.googleapis.com/analytics/v3'
-  const endpoint = `https://analyticsadmin.googleapis.com/v1beta`
-
-  const CLIENT_ID = '1035301278821-mnlpf5pa5qbgm3g3qo6a97k246at79b8.apps.googleusercontent.com'
 
   const SCOPES = useMemo(() => [
     'https://www.googleapis.com/auth/analytics',
