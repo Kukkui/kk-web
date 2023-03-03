@@ -5,7 +5,7 @@ import './App.css';
 function App() {
   return (
     <div className="App">
-      HI KK: TEST TAG WITH CHAW
+      HI KK: TEST TAG WITH CHAW V2
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
