@@ -67,7 +67,8 @@ export default function GA() {
   const getAnalyticsAccount = () => {
     // GET https://www.googleapis.com/analytics/v3/management/accountSummaries
     const analyticsBasicSummaryEndpoint = 'https://www.googleapis.com/analytics/v3/management/accountSummaries';
-    fetch(`${analyticsBasicSummaryEndpoint}/accounts`, {
+    fetch(`${analyticsBasicSummaryEndpoint}`, {
+      mode: 'no-cors',
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
