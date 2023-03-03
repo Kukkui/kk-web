@@ -1,27 +1,26 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Input, Card, Button } from 'antd';
-
-// const App: React.FC = () => (
-//   <>
-//     <Input placeholder="input with clear icon" allowClear onChange={onChange} />
-//     <br />
-//     <br />
-//     <TextArea placeholder="textarea with clear icon" allowClear onChange={onChange} />
-//   </>
-// );
+import { Input, Card, Button, Select, message } from 'antd';
 
 export default function GA() {
   const [audienceName, setAudienceName] = useState('');
   const [audienceDescription, setAudienceDescription] = useState('');
   const [accessToken, setAccessToken] = useState('');
-
+  const [accountSummary, setAccountSummary] = useState([]);
+  const [isShowAnalyticSelection, setIsShowAnalyticSelection] = useState(false);
+  const [analyticsOptions, setAnalyticsOptions] = useState([]);
+  const [selectedAnalytic, setSelectedAnalytic] = useState({});
+  const [isShowPropertiesSelection, setIsShowPropertiesSelection] = useState(false);
+  const [propertiesOptions, setPropertiesOption] = useState([]);
+  const [selectedProperty, setSelectedProperty] = useState({});
+  const [client, setClient] = useState(null);
+  const [isShowSyncButton, setIsShowSyncButton] = useState(false);
+  const [isCompleteSignIn, setIsCompleteSignIn] = useState(false);
   const { TextArea } = Input;
-  const endpoint = `https://analyticsadmin.googleapis.com/v1beta`
+  // const endpoint = `https://analyticsadmin.googleapis.com/v1beta`
 
   const CLIENT_ID = '1035301278821-mnlpf5pa5qbgm3g3qo6a97k246at79b8.apps.googleusercontent.com'
 
   const onChange = (e, type) => {
-    // console.log(e.target.value);
     if (type === 'name') {
       setAudienceName(e.target.value);
     }
@@ -30,76 +29,56 @@ export default function GA() {
       setAudienceDescription(e.target.value);
     }
   };
-  
-  const syncGoogleAnalyticsAudience =  async () => {
 
-    console.log('CALL syncGoogleAnalyticsAudience!');
-
-    await googleLoginAuth();
-    await getAnalyticsAccount();
+  const analyticsSelection = (analyticSelected) => {
+    const tempSelectedAnalytic = analyticsOptions?.find((eachAnalytic) => eachAnalytic?.value === analyticSelected)
     
-    alert(audienceName);
-    alert(audienceDescription);
-
-    getAccounts();
+    setIsShowPropertiesSelection(true);
+    setPropertiesOption([]);
+    setSelectedProperty(null);
+    setSelectedAnalytic(tempSelectedAnalytic);
+    setPropertiesOptions(analyticSelected);
   }
 
-  // const getAccounts = () => {
+  const setPropertiesOptions = (analyticsSelected) => {
+    const analyticsInfo = accountSummary?.find((eachAccount) => eachAccount?.account === analyticsSelected);
+    const propertiesListInsideSelectedAnalytics = analyticsInfo?.propertySummaries || [];
+    const tempPropertiesOptions = propertiesListInsideSelectedAnalytics?.map((eachPropertiesOption)=>{
+      return {
+        label: `PROPERTY: ${eachPropertiesOption?.displayName} (${eachPropertiesOption?.property?.split('/')[1]})`,
+        value:  eachPropertiesOption?.property,
+      }
+    });
 
-    // fetch(`${endpoint}/accounts`, {
-    //   method: 'GET',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${accessToken}`
-    //   },
-    // })
-    //   .then((response) => response.json())
-    //   .then((data) => {
+    setPropertiesOption(tempPropertiesOptions);
+  }
+  
+  const logInProcess =  async () => {
+    await googleLoginAuth();
+  }
 
-    //     console.log('Success: ', data)
+  useEffect(()=> {
+    if (accessToken) {
+      getAnalyticsAccount();
+      setIsCompleteSignIn(true);
+    }
 
-    //     // setAccounts(data?.accounts);
-
-    //     // if (data?.error?.code === 401) {
-    //     //   refreshToken()
-    //     // }
-    //   })
-    //   .catch((error) => {
-    //     console.error('Error:', error);
-    //   });
-
-  // }
-  const getAccounts = () => {
-
-    fetch(`${endpoint}/accounts`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-
-        console.log('Success: ', data)
-
-        console.log(data?.accounts);
-
-        if (data?.error?.code === 401) {
-          refreshToken()
+    if (accountSummary?.length) {
+      setIsShowAnalyticSelection(true);
+      const tempAnalyticsOptions = accountSummary?.map((eachAccount) => {
+        return {
+          label: `ANALYTICS ACCOUNT: ${eachAccount?.displayName} (${eachAccount?.account?.split('/')[1]})`,
+          value: eachAccount?.account,
         }
       })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-
-  }
+      setAnalyticsOptions(tempAnalyticsOptions);
+    }
+  }, [accessToken, accountSummary]);
 
   const getAnalyticsAccount = () => {
     // GET https://www.googleapis.com/analytics/v3/management/accountSummaries
-    const analyticsBasicSummaryEndpoint = 'https://www.googleapis.com/analytics/v3/management/accountSummaries';
+    const analyticsBasicSummaryEndpoint = 'https://analyticsadmin.googleapis.com/v1beta/accountSummaries';
     fetch(`${analyticsBasicSummaryEndpoint}`, {
-      mode: 'no-cors',
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -111,17 +90,67 @@ export default function GA() {
 
         console.log('Success: ', data)
 
-        // setAccounts(data?.accounts);
-
         if (data?.error?.code === 401) {
           refreshToken()
+        } else {
+          setAccountSummary(data?.accountSummaries);
         }
       })
       .catch((error) => {
         console.error('Error:', error);
       });
   }
-  // const endpoint = 'https://www.googleapis.com/analytics/v3'
+
+  const createGoogleAnalyticsAudience = (payload) => {
+    const {
+      audienceName,
+      audienceDescription,
+      propertyValue
+    } = payload;
+
+    const propertyId = propertyValue?.split('/')[1];
+
+    const analyticsBasicSummaryEndpoint = `https://analyticsadmin.googleapis.com/v1alpha/properties/${propertyId}/audiences`;
+    fetch(`${analyticsBasicSummaryEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: `{
+        "description":"${audienceDescription}",
+        "displayName":"${audienceName}",
+        "eventTrigger":{
+           "eventName":"PAGE_VIEW",
+           "logCondition":"AUDIENCE_JOINED"
+        },
+        "exclusionDurationMode":"EXCLUDE_TEMPORARILY",
+        "filterClauses":[
+           {
+              "clauseType":"INCLUDE",
+              "simpleFilter":{
+                 "scope":"AUDIENCE_FILTER_SCOPE_WITHIN_SAME_EVENT",
+                 "filterExpression":{
+                    "andGroup":{
+                    }
+                 }
+              }
+           }
+        ],
+        "membershipDurationDays": 0
+      }`
+    })
+      .then((response) => response.json())
+      .then((data) => {
+
+        // console.log('Success: ', data)
+        message.success('COMPLETE SYNC GA ADS AUDIENCE! PLEASE RECHECK YOUR GA AUDIENCE DASHBOARD');
+      })
+      .catch((error) => {
+        // console.error('Error:', error);
+        message.error('FAILED SYNC GA ADS AUDIENCE! PLEASE REFRESH AND RESYNC AGAIN!');
+      });
+  }
 
   const SCOPES = useMemo(() => [
     'https://www.googleapis.com/auth/analytics',
@@ -131,100 +160,22 @@ export default function GA() {
     'https://www.googleapis.com/auth/analytics.manage.users.readonly'
   ].join(' '), []);
 
-  const [client, setClient] = useState(null);
-  const [accounts, setAccounts] = useState([]);
-  const [properties, setProperties] = useState([]);
+  const propertiesSelection = (property) => {
+    const propertySelected = propertiesOptions?.find((eachProperty) => eachProperty?.value === property);
 
+    setSelectedProperty(propertySelected);
+  }
 
-  // function revokeToken() {
-  //   window?.google?.accounts.oauth2.revoke(accessToken, () => { console.log('access token revoked') });
-  // }
-
-  // const getAccounts = () => {
-
-  //   fetch(`${endpoint}/accounts`, {
-  //     method: 'GET',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //       'Authorization': `Bearer ${accessToken}`
-  //     },
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-
-  //       console.log('Success: ', data)
-
-  //       setAccounts(data?.accounts);
-
-  //       if (data?.error?.code === 401) {
-  //         refreshToken()
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error('Error:', error);
-  //     });
-
-  // }
-
-  // const getWebProperties = (accountId = '~all', webPropertyId = 'G-QWCJ58H7VT') => {
-
-
-  //   // const url = webPropertyId
-  //   //   ? `${endpoint}/management/accounts/${accountId}/webproperties/${webPropertyId}`
-  //   //   : `${endpoint}/management/accounts/${accountId}/webproperties`;
-
-  //   const url = `${endpoint}/properties`
-  //     + `/?filter=ancestor:${accountId}`
-
-  //   console.log('===getWebProperties===', url)
-
-  //   fetch(url, {
-  //     method: 'GET',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //       'Authorization': `Bearer ${accessToken}`
-  //     },
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-
-  //       console.log('Success: ', data?.properties);
-
-  //       if (data?.error?.code === 401) {
-  //         refreshToken()
-  //       }
-
-  //       setProperties(data?.properties)
-  //     })
-  //     .catch((error) => {
-  //       console.error('Error:', error);
-  //     });
-  // }
-
-  // const getDimensions = () => {
-
-  //   const customDimensionsUrl = `${endpoint}/management`
-  //     + `/accounts/${ACCOUNT_ID}`
-  //     + `/webproperties/${WEB_PROPERTY_ID}`
-  //     + '/customDimensions';
-
-  //   fetch(customDimensionsUrl, {
-  //     method: 'GET',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //       'Authorization': `Bearer ${accessToken}`
-  //     },
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-
-  //       console.log('Success: ', data)
-  //     })
-  //     .catch((error) => {
-  //       console.error('Error:', error);
-  //     });
-  // }
-
+  useEffect(()=> {
+    // UNCOMMENT TO INSERT GA AUDIENCE
+    // console.log('accountSummary');
+    // console.log(accountSummary);
+    // console.log('accountSummary?.length...');
+    // console.log(accountSummary?.length);
+    // if (accountSummary?.length) {
+    //   createGoogleAnalyticsAudience();
+    // }
+  }, [accountSummary])
 
   const refreshToken = () => client?.requestAccessToken();
 
@@ -236,7 +187,6 @@ export default function GA() {
       return undefined;
     }
 
-    alert('TEST');
     const client = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
@@ -250,89 +200,88 @@ export default function GA() {
 
     const authToken = localStorage.getItem('authToken');
     if (authToken) {
-      alert('ALREADY HAVE TOKEN!');
-      console.log('authToken...');
-      console.log(authToken);
       const tokenResponse = JSON.parse(authToken);
       setAccessToken(tokenResponse.access_token);
     } else if (!accessToken) {
-      alert('REQUEST ACCESS TOKEN!');
-      console.log('access token request')
       client.requestAccessToken();
     }
 
     setClient(client);
-
   }
 
-  // useEffect(() => {
+  useEffect(() => {
+    if( audienceName && audienceDescription && selectedAnalytic?.value && selectedProperty?.value) {
+      setIsShowSyncButton(true);
+    } else {
+      setIsShowSyncButton(false);
+    }
+  }, [audienceName, audienceDescription, selectedAnalytic, selectedProperty])
+
+  const syncGoogleAnalyticsAudience = () => {
+    if( !audienceName || !audienceDescription || !selectedAnalytic?.value || !selectedProperty?.value) {
+      message.error('Please complete all fields!');
+    } else {
+      createGoogleAnalyticsAudience({
+        audienceName,
+        audienceDescription,
+        propertyValue: selectedProperty?.value,
+    })
+    }
     
-
-  // }, [accessToken, SCOPES, CLIENT_ID]);
-
+  }
 
   return (
-    // <div>
-    //   <h3 className="text-center mb-6">Google Analytics 4</h3>
-
-
-    //   <button
-    //     className="inline-block rounded border border-orange-500 px-12 py-3 text-sm font-medium text-orange-600 hover:bg-orange-600 hover:text-white focus:outline-none focus:ring active:bg-orange-500"
-    //     type="button"
-    //     onClick={()=>{}}>
-    //     Get Account
-    //   </button>
-
-    //   <input title="AUDIENCE NAME" id="GoogleAnalyticsAudienceName" placeholder="GoogleAnalytics Audience Name">
-    //   </input>
-
-    //   <input title="AUDIENCE DESCRIPTION" id="GoogleAnalyticsAudienceDescription" placeholder="GoogleAnalytics Audience Description">
-    //   </input>
-
-    //   <button title="SYNC">
-
-    //   </button>
-
-    //   {accounts?.length && (
-    //     <div id="accounts">
-    //       <ul>
-    //         {accounts?.map(({ name: accountId, displayName: accountName, createTime, childLink }) => (
-    //           <li key={`account_${accountId}`}>
-    //             <button type="button" onClick={() => {}}>
-    //               <div className="border-2 border-gray-200 shadow-md rounded-md text-left flex flex-col px-4 pt-6 mx-1 my-2 w-[300px] hover:bg-gray-500 relative">
-    //                 <p className="text-sm text-gray-400 absolute top-1 left-2">{accountId}</p>
-    //                 <p className="text-[12px] text-gray-400 absolute top-1 right-2">{new Date(createTime).toLocaleString()}</p>
-    //                 <p>{accountName}</p>
-    //               </div>
-    //             </button>
-    //           </li>
-    //         ))}
-    //       </ul>
-    //     </div>
-    //   )}
-
-
-
-    // </div>
     <>
     <Card title="TEST SYNC GOOGLE ANALYTICS ADS AUDIENCE" style={{width: '80%', margin: 'auto', backgroundColor: 'lightblue'}}>
+    {isShowAnalyticSelection && 
+    <>
     <Input placeholder="GA Audience Name" allowClear onChange={(e) => onChange(e, 'name')} />
     <br />
     <br />
     <TextArea placeholder="GA Audience Description" allowClear onChange={(e) => onChange(e, 'description')} />
-    {/* <Button> SYNC </Button> */}
     <br/>
     <br/>
-    <Button type="primary" block onClick={syncGoogleAnalyticsAudience}>
-      SYNC
-    </Button>
-    </Card>
+    <Select
+      style={{ width: '100%', margin: 'auto' }}
+      placeholder="Select Analytics"
+      optionFilterProp="children"
+      onChange={analyticsSelection}
+      options={analyticsOptions}
+      value={selectedAnalytic}
+    />
+    <br/>
+    <br/>
+    </>
+    }
+  
+    {isShowPropertiesSelection && 
+    <>
+    <Select
+      style={{ width: '100%', margin: 'auto' }}
+      placeholder="Select Properties"
+      optionFilterProp="children"
+      onChange={propertiesSelection}
+      options={propertiesOptions}
+      value={selectedProperty}
+    />
+    <br/>
+    <br/>
+    </>
+    }
 
-{/*     
-    <Input placeholder="GA Audience Name" allowClear onChange={(e) => onChange(e, 'name')} />
-    <br />
-    <br />
-    <TextArea placeholder="GA Audience Description" allowClear onChange={(e) => onChange(e, 'description')} /> */}
+    { (!isShowSyncButton && !isCompleteSignIn) 
+    ? (
+    <Button block onClick={logInProcess}>
+      START LOGIN
+    </Button>
+    ) 
+    : (
+      <Button type="primary" block onClick={syncGoogleAnalyticsAudience}>
+      SYNC NOW!
+    </Button>
+    )
+    }
+    </Card>
     </>
   )
 }
