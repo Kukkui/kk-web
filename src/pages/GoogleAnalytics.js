@@ -272,7 +272,7 @@ export default function GA() {
     { (!isShowSyncButton && !isCompleteSignIn) 
     ? (
     <Button block onClick={logInProcess}>
-      START LOGIN
+      START LOGIN V2
     </Button>
     ) 
     : (
