@@ -162,7 +162,7 @@ export default function GA() {
                                               "atAnyPointInTime": true,
                                               "inListFilter": {
                                                 "caseSensitive": false,
-                                                "values": ${parametersValue.split(',')}
+                                                "values": [${parametersValue.split(',').map((eachValue) => { return `"${eachValue}"`})}]
                                               }
                                             }
                                           }
@@ -186,9 +186,15 @@ export default function GA() {
         "membershipDurationDays": 540
       }`
     })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(`DATA: ${data}`);
+      .then((response) => {
+        if (response?.ok) {
+          return response.json()
+        }
+
+        throw new Error('Error GA Ads Audience Creation!')
+      })
+      .then((response) => {
+        console.log(`DATA: ${response}`);
         message.success('COMPLETE SYNC GA ADS AUDIENCE! PLEASE RECHECK YOUR GA AUDIENCE DASHBOARD');
       })
       .catch((error) => {
