@@ -4,6 +4,9 @@ import { Input, Card, Button, Select, message } from 'antd';
 export default function GA() {
   const [audienceName, setAudienceName] = useState('');
   const [audienceDescription, setAudienceDescription] = useState('');
+  const [eventName, setEventName] = useState('');
+  const [eventParameter, setEventParameter] = useState('');
+  const [parametersValue, setParametersValue] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [accountSummary, setAccountSummary] = useState([]);
   const [isShowAnalyticSelection, setIsShowAnalyticSelection] = useState(false);
@@ -27,6 +30,18 @@ export default function GA() {
 
     if (type === 'description') {
       setAudienceDescription(e.target.value);
+    }
+
+    if (type === 'eventName') {
+      setEventName(e.target.value);
+    }
+
+    if (type === 'eventParameter') {
+      setEventParameter(e.target.value);
+    }
+
+    if (type === 'parametersValue') {
+      setParametersValue(e.target.value);
     }
   };
 
@@ -110,44 +125,74 @@ export default function GA() {
 
     const propertyId = propertyValue?.split('/')[1];
 
-    const analyticsBasicSummaryEndpoint = `https://analyticsadmin.googleapis.com/v1alpha/properties/${propertyId}/audiences`;
-    fetch(`${analyticsBasicSummaryEndpoint}`, {
+    const analyticsAudienceCreationEndpoint = `https://analyticsadmin.googleapis.com/v1alpha/properties/${propertyId}/audiences`;
+    fetch(`${analyticsAudienceCreationEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`
       },
       body: `{
-        "description":"${audienceDescription}",
-        "displayName":"${audienceName}",
-        "eventTrigger":{
-           "eventName":"PAGE_VIEW",
-           "logCondition":"AUDIENCE_JOINED"
-        },
-        "exclusionDurationMode":"EXCLUDE_TEMPORARILY",
-        "filterClauses":[
-           {
-              "clauseType":"INCLUDE",
-              "simpleFilter":{
-                 "scope":"AUDIENCE_FILTER_SCOPE_WITHIN_SAME_EVENT",
-                 "filterExpression":{
-                    "andGroup":{
+        "description": "${audienceDescription}",
+        "displayName": "${audienceName}",
+        "exclusionDurationMode": "AUDIENCE_EXCLUSION_DURATION_MODE_UNSPECIFIED",
+        "filterClauses": [
+          {
+            "clauseType": "INCLUDE",
+            "simpleFilter": {
+              "scope": "AUDIENCE_FILTER_SCOPE_ACROSS_ALL_SESSIONS",
+              "filterExpression": {
+                "andGroup": {
+                  "filterExpressions": [
+                    {
+                      "orGroup": {
+                        "filterExpressions": [
+                          {
+                            "eventFilter": {
+                              "eventName": "${eventName}",
+                              "eventParameterFilterExpression": {
+                                "andGroup": {
+                                  "filterExpressions": [
+                                    {
+                                      "orGroup": {
+                                        "filterExpressions": [
+                                          {
+                                            "dimensionOrMetricFilter": {
+                                              "fieldName": "${eventParameter}",
+                                              "atAnyPointInTime": true,
+                                              "inListFilter": {
+                                                "caseSensitive": false,
+                                                "values": ${parametersValue.split(',')}
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
                     }
-                 }
+                  ]
+                }
               }
-           }
+            }
+          }
         ],
-        "membershipDurationDays": 0
+        "membershipDurationDays": 540
       }`
     })
       .then((response) => response.json())
       .then((data) => {
-
-        // console.log('Success: ', data)
+        console.log(`DATA: ${data}`);
         message.success('COMPLETE SYNC GA ADS AUDIENCE! PLEASE RECHECK YOUR GA AUDIENCE DASHBOARD');
       })
       .catch((error) => {
-        // console.error('Error:', error);
+        console.error(`ERROR: ${error}`);
         message.error('FAILED SYNC GA ADS AUDIENCE! PLEASE REFRESH AND RESYNC AGAIN!');
       });
   }
@@ -218,7 +263,14 @@ export default function GA() {
   }, [audienceName, audienceDescription, selectedAnalytic, selectedProperty])
 
   const syncGoogleAnalyticsAudience = () => {
-    if( !audienceName || !audienceDescription || !selectedAnalytic?.value || !selectedProperty?.value) {
+    if( !audienceName
+      || !audienceDescription 
+      || !selectedAnalytic?.value 
+      || !selectedProperty?.value
+      || !eventName
+      || !eventParameter
+      || !parametersValue
+      ) {
       message.error('Please complete all fields!');
     } else {
       createGoogleAnalyticsAudience({
@@ -241,6 +293,16 @@ export default function GA() {
     <TextArea placeholder="GA Audience Description" allowClear onChange={(e) => onChange(e, 'description')} />
     <br/>
     <br/>
+    <Input placeholder="Event Name" allowClear onChange={(e) => onChange(e, 'eventName')} />
+    <br />
+    <br />
+    <Input placeholder="Event Parameter" allowClear onChange={(e) => onChange(e, 'eventParameter')} />
+    <br />
+    <br />
+    <Input placeholder="Parameters Value (MUST SEPERATE WITH COMMA & NO SPACE ALLOW)" allowClear onChange={(e) => onChange(e, 'parametersValue')} />
+    <br />
+    <br />
+
     <Select
       style={{ width: '100%', margin: 'auto' }}
       placeholder="Select Analytics"
