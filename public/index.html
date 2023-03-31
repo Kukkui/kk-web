@@ -163,6 +163,22 @@
 
   gtag('config', 'G-2FVMYPW9CP');
 </script>
+
+<script defer type="text/javascript" id="connectxWebTracking"
+src="https://connect-x-con-7022.herokuapp.com/connectx/api/webTrackingSdk.min.js?orgId=QTv3HDlBU5HvHT5Iiy73"></script>
+<script>window.cxOpenTicket = window.cxOpenTicket ||  function submit_cx_identify() {
+  const key = document.getElementById('cx_identify_key').value;
+  const customers = document.getElementById('cx_identify_customers').value;
+  const ticket = document.getElementById('cx_identify_tracking').value;
+  let body = {
+    key,
+    customers : JSON.parse(customers),
+    ticket : JSON.parse(ticket)
+  }
+
+  cxOpenTicket(body)
+}
+</script>
 <!-- END NEW FOR KK -->
   </head>
   <body>
