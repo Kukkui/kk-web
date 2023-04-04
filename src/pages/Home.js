@@ -13,7 +13,7 @@ const Home = () => {
     <div>
       <h1>Home1</h1>
       <br />
-      <b>cxOpenTicket</b>
+      <b>cxOpenTicket Beta</b>
       <form onSubmit={handleFormSubmit}>
         <label htmlFor="cx_identify_key">Key:</label>
         <input id="cx_identify_key" value={key} onChange={(e) => setKey(e.target.value)} />
