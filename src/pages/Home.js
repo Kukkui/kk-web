@@ -4,10 +4,12 @@ const Home = () => {
   const [key, setKey] = useState('');
   const [customers, setCustomers] = useState('');
   const [tracking, setTracking] = useState('');
+  const [lead, setLead] = useState('');
+  const [customs, setCustoms] = useState('');
 
   const handleFormSubmit = (event) => {
     event.preventDefault();
-    window.cxOpenTicket(key, JSON.parse(customers), JSON.parse(tracking));
+    window.cxOpenTicket(key, JSON.parse(customers), JSON.parse(tracking), JSON.parse(lead), JSON.parse(customs));
   };
   return (
     <div>
@@ -32,6 +34,24 @@ const Home = () => {
           id="cx_identify_tracking"
           value={tracking}
           onChange={(e) => setTracking(e.target.value)}
+        />
+        <br />
+        <br />
+        <label htmlFor="cx_identify_lead">Lead:</label>
+        <textarea
+          style={{width: '1000px', height: '150px'}}
+          id="cx_identify_lead"
+          value={lead}
+          onChange={(e) => setLead(e.target.value)}
+        />
+        <br />
+        <br />
+        <label htmlFor="cx_identify_customs">Customs:</label>
+        <textarea
+          style={{width: '1000px', height: '150px'}}
+          id="cx_identify_customs"
+          value={customs}
+          onChange={(e) => setCustoms(e.target.value)}
         />
         <br />
         <button type="submit">Submit cx openTicket</button>
