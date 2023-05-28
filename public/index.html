@@ -30,9 +30,11 @@ src="https://connect-x-con-7471.herokuapp.com/connectx/api/webTrackingSdk.min.js
     key,
     customers : JSON.parse(customers),
     ticket : JSON.parse(ticket),
-    lead:  JSON.parse(lead),
-    customs:  JSON.parse(customs)
+    lead:  lead ? JSON.parse(lead) : '',
+    customs:  customs ? JSON.parse(customs) : ''
   }
+  if(!lead) delete body.lead
+  if(!customs) delete body.customs
 
   cxOpenTicket(body)
 }

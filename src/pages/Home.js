@@ -9,7 +9,13 @@ const Home = () => {
 
   const handleFormSubmit = (event) => {
     event.preventDefault();
-    window.cxOpenTicket(key, JSON.parse(customers), JSON.parse(tracking), JSON.parse(lead), JSON.parse(customs));
+    window.cxOpenTicket(
+      key, 
+      JSON.parse(customers), 
+      JSON.parse(tracking), 
+      lead ? JSON.parse(lead) : '', 
+      customs ? JSON.parse(customs): ''
+      );
   };
   return (
     <div>
