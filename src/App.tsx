@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
 import GA from "./pages/GoogleAnalytics";
+import DropForm from "./pages/DropForm";
 // import Contact from "./pages/Contact";
 // import NoPage from "./pages/NoPage";
 
@@ -38,6 +39,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path='GA' element={<GA />} />
+          <Route path='dropForm' element={<DropForm />} />
           {/* <Route path="blogs" element={<Blogs />} />
           <Route path="contact" element={<Contact />} />
           <Route path="*" element={<NoPage />} /> */}
