@@ -11,13 +11,14 @@ const Home = () => {
     event.preventDefault();
     // window.cxOpenTicket(
     // eslint-disable-next-line no-undef
-    cxOpenTicket(
+    cxOpenTicket({
       key, 
-      JSON.parse(customers), 
-      JSON.parse(tracking), 
-      lead ? JSON.parse(lead) : '', 
-      customs ? JSON.parse(customs): ''
-      );
+      customers: JSON.parse(customers), 
+      ticket: JSON.parse(tracking), 
+      tracking: JSON.parse(tracking), 
+      // lead: lead ? JSON.parse(lead) : '', 
+      // customs: customs ? JSON.parse(customs): ''
+    });
   };
   return (
     <div>
