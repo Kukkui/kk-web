@@ -9,7 +9,9 @@ const Home = () => {
 
   const handleFormSubmit = (event) => {
     event.preventDefault();
-    window.cxOpenTicket(
+    // window.cxOpenTicket(
+    // eslint-disable-next-line no-undef
+    cxOpenTicket(
       key, 
       JSON.parse(customers), 
       JSON.parse(tracking), 
